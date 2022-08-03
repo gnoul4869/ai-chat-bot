@@ -1,2 +1,2 @@
-# AIChatBot
- An AI Chat Bot
+# AI Chat Bot
+ An AI chat bot created using TensorFlow and Python
