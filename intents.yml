@@ -1,0 +1,71 @@
+- context: greeting
+  patterns:
+      - Hi
+      - Is anyone there?
+      - Hello
+      - Good day
+      - Whats up
+      - Hey
+  responses:
+      - Hello
+      - Hi
+      - Greetings
+      - Nice to meet you
+# -----------------------------------------------
+- context: goodbye
+  patterns:
+      - Cya
+      - See you later
+      - Goodbye
+      - I am Leaving
+      - Have a Good day
+      - Bye
+  responses:
+      - See you later
+      - Goodbye
+      - Bye
+      - Later!
+# -----------------------------------------------
+- context: age
+  patterns:
+      - How old
+      - What is your age
+      - How old are you
+      - Age?
+  responses:
+      - I was created in 2021
+# -----------------------------------------------
+- context: name
+  patterns:
+      - What is your name
+      - What should I call you
+      - Whats your name?
+      - Your name
+  responses:
+      - I don't have a name yet
+# -----------------------------------------------
+- context: sad
+  patterns:
+      - Sad
+      - Depressed
+      - Unhappy
+      - Angry
+      - Miserable
+  responses:
+      - Cheer up
+      - Hang in there
+      - Never give up
+      - You are great
+# -----------------------------------------------
+- context: compliment
+  patterns:
+      - Thanks
+      - Thank you
+      - Nice one
+      - Helped
+      - Well said
+  responses:
+      - You're welcome
+      - No problem
+      - It's nothing
+      - I'm glad I could help
