@@ -49,7 +49,6 @@ class AI:
     def train(self):
 
         # Create training data
-
         x = []
         y = []
 
@@ -71,7 +70,6 @@ class AI:
         y = np.array(y)
 
         # Create model
-
         self.model = tf.keras.Sequential([
             tf.keras.Input(shape=(len(x[0]))),
             tf.keras.layers.Dense(10),
