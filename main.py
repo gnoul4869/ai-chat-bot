@@ -7,6 +7,7 @@ from sklearn.preprocessing import LabelEncoder
 import tensorflow as tf
 import random
 
+
 class AI:
 
     def __init__(self):
@@ -102,11 +103,14 @@ class AI:
         return np.expand_dims(container, axis=0)
 
     def predict(self, query):
-        probabilities = self.model.predict(query)
+        probabilities = self.model.predict(query, verbose=0)
 
         result = np.argmax(probabilities)
 
         context = self.label_encoder.inverse_transform([result])[0]
+
+        print(f'Prediction: {context}')
+        print(f'Probability: {np.amax(probabilities) * 100:.2f}%')
 
         return context
 
@@ -125,7 +129,8 @@ class AI:
 
             context = self.predict(query)
 
-            responses = next(intent['responses'] for intent in self.intents if intent['context'] == context)
+            responses = next(intent['responses'] for intent in self.intents
+                             if intent['context'] == context)
 
             print(random.choice(responses))
 
