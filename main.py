@@ -41,8 +41,8 @@ class AI:
                 self.data.append(stemmed_words)
                 self.labels.append(intent['context'])
 
-        # Remove repeated words
-        self.words = set(self.words)
+        # Sort and remove repeated words
+        self.words = sorted(set(self.words))
 
     # ------------------------------------------------------------------------------
 
@@ -69,40 +69,52 @@ class AI:
         x = np.array(x)
         y = np.array(y)
 
+        # Load model
+        try:
+            self.model = tf.keras.models.load_model('temp/model')
         # Create model
-        self.model = tf.keras.Sequential([
-            tf.keras.Input(shape=(len(x[0]))),
-            tf.keras.layers.Dense(10),
-            tf.keras.layers.Dense(10),
-            tf.keras.layers.Dense(len(set(y)), activation='softmax')
-        ])
+        except:
+            self.model = tf.keras.Sequential([
+                tf.keras.Input(shape=(len(x[0]))),
+                tf.keras.layers.Dense(10),
+                tf.keras.layers.Dense(10),
+                tf.keras.layers.Dense(len(set(y)), activation='softmax')
+            ])
 
-        self.model.compile(
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            optimizer=tf.keras.optimizers.Adam(),
-            metrics=['accuracy'])
+            self.model.compile(
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                optimizer=tf.keras.optimizers.Adam(),
+                metrics=['accuracy'])
 
-        history = self.model.fit(x, y, epochs=500, batch_size=32, verbose=2)
+            history = self.model.fit(x,
+                                     y,
+                                     epochs=500,
+                                     batch_size=32,
+                                     verbose=2)
 
-        # Generate model plot
-        tf.keras.utils.plot_model(self.model,
-                                  show_shapes=True,
-                                  show_layer_activations=True,
-                                  to_file='images/model.png')
+            # Save model
+            self.model.save('temp/model')
 
-        # Generate training result plot
-        suptitle = 'Training result'
-        title = f'Words: {len(self.words)}'
-        title += ' / '
-        title += f'Sentences: {len(self.data)}'
-        title += ' / '
-        title += f'Labels: {len(set(y))}'
+            # Generate model plot
+            tf.keras.utils.plot_model(self.model,
+                                      show_shapes=True,
+                                      show_layer_activations=True,
+                                      to_file='images/model.png')
 
-        pd.DataFrame(history.history).plot()
-        plt.suptitle(suptitle)
-        plt.title(title, fontsize=12, color='#fd4d4d')
-        plt.xlabel('Epochs')
-        plt.savefig('images/training_result.png')
+            # Generate training result plot
+            suptitle = 'Training result'
+            title = f'Words: {len(self.words)}'
+            title += ' / '
+            title += f'Sentences: {len(self.data)}'
+            title += ' / '
+            title += f'Labels: {len(set(y))}'
+
+            pd.DataFrame(history.history).plot()
+            plt.suptitle(suptitle)
+            plt.title(title, fontsize=12, color='#fd4d4d')
+            plt.xlabel('Epochs')
+            plt.savefig('images/training_result.png')
+        # --------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------
 
@@ -111,7 +123,7 @@ class AI:
             Accept input as string to normalize. Return a container of normalized input.
         """
 
-        tokenized_input = nltk.word_tokenize(input)
+        tokenized_input = nltk.word_tokenize(input.lower())
         stemmed_input = [self.stemmer.stem(i) for i in tokenized_input]
 
         container = []
