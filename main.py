@@ -139,7 +139,7 @@ class AI:
 
     def chat(self):
         if self.model is None:
-            return print('I have not trained...cannot start a conversation...')
+            return print('I am not trained...cannot start a conversation...')
 
         print("I'm ready to chat!")
 
