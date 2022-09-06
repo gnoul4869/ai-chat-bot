@@ -5,6 +5,8 @@ import nltk
 from nltk.stem import SnowballStemmer
 from sklearn.preprocessing import LabelEncoder
 import tensorflow as tf
+import pandas as pd
+import matplotlib.pyplot as plt
 import random
 
 
@@ -38,6 +40,9 @@ class AI:
                 self.words.extend(stemmed_words)
                 self.data.append(stemmed_words)
                 self.labels.append(intent['context'])
+
+        # Remove repeated words
+        self.words = set(self.words)
 
     # ------------------------------------------------------------------------------
 
@@ -79,7 +84,27 @@ class AI:
             optimizer=tf.keras.optimizers.Adam(),
             metrics=['accuracy'])
 
-        self.model.fit(x, y, epochs=500, batch_size=32, verbose=2)
+        history = self.model.fit(x, y, epochs=500, batch_size=32, verbose=2)
+
+        # Generate model
+        tf.keras.utils.plot_model(self.model,
+                                  show_shapes=True,
+                                  show_layer_activations=True,
+                                  to_file='images/model.png')
+
+        # Generate training result
+        suptitle = 'Training result'
+        title = f'Words: {len(self.words)}'
+        title += ' / '
+        title += f'Sentences: {len(self.data)}'
+        title += ' / '
+        title += f'Labels: {len(set(y))}'
+
+        pd.DataFrame(history.history).plot()
+        plt.suptitle(suptitle)
+        plt.title(title, fontsize=12, color='#fd4d4d')
+        plt.xlabel('Epochs')
+        plt.savefig('images/training_result.png')
 
     # ------------------------------------------------------------------------------
 
