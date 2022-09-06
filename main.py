@@ -84,13 +84,13 @@ class AI:
 
         history = self.model.fit(x, y, epochs=500, batch_size=32, verbose=2)
 
-        # Generate model
+        # Generate model plot
         tf.keras.utils.plot_model(self.model,
                                   show_shapes=True,
                                   show_layer_activations=True,
                                   to_file='images/model.png')
 
-        # Generate training result
+        # Generate training result plot
         suptitle = 'Training result'
         title = f'Words: {len(self.words)}'
         title += ' / '
@@ -106,7 +106,7 @@ class AI:
 
     # ------------------------------------------------------------------------------
 
-    def normalize_input(self, input):
+    def encode_words(self, input):
         """
             Accept input as string to normalize. Return a container of normalized input.
         """
@@ -148,7 +148,7 @@ class AI:
             if inp.lower() == "quit":
                 break
 
-            query = self.normalize_input(inp)
+            query = self.encode_words(inp)
 
             context = self.predict(query)
 
