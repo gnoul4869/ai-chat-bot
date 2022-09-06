@@ -1,115 +1,138 @@
+import re
+import yaml
+import numpy as np
 import nltk
-from nltk.stem.lancaster import LancasterStemmer
-stemmer = LancasterStemmer()
-import numpy
-import tflearn
+from nltk.stem import SnowballStemmer
+from sklearn.preprocessing import LabelEncoder
 import tensorflow as tf
 import random
-import json
-import pickle
-import os
 
-with open("intents.json") as file:
-    data = json.load(file)
+class AI:
 
-try:
-    with open("data.pickle", "rb") as f:
-        words, labels, training, output = pickle.load(f)
-except:
-    words = []
-    labels = []
-    docs_x = []
-    docs_y = []
+    def __init__(self):
+        self.intents = []
+        self.words = []
+        self.data = []
+        self.labels = []
 
-    for intent in data["intents"]:
-        for pattern in intent["patterns"]:
-            wrds = nltk.word_tokenize(pattern)
-            words.extend(wrds)
-            docs_x.append(wrds)
-            docs_y.append(intent["tag"])
+        self.model = None
 
-        if intent["tag"] not in labels:
-            labels.append(intent["tag"])
+        self.stemmer = SnowballStemmer('english')
+        self.label_encoder = LabelEncoder()
 
-    words = [stemmer.stem(w.lower()) for w in words if w != "?"]
-    words = sorted(list(set(words)))
+        self.load_data()
 
-    labels = sorted(labels)
+    def load_data(self):
+        with open("intents.yml") as stream:
+            self.intents = yaml.safe_load(stream)
 
-    training = []
-    output = []
+        for intent in self.intents:
+            for pattern in intent['patterns']:
 
-    out_empty = [0 for _ in range(len(labels))]
+                pattern = re.sub(r'[^\w\s]', '', pattern).lower()
 
-    for x, doc in enumerate(docs_x):
-        bag = []
+                tokenized_words = nltk.word_tokenize(pattern)
+                stemmed_words = [self.stemmer.stem(w) for w in tokenized_words]
 
-        wrds = [stemmer.stem(w.lower()) for w in doc]
+                self.words.extend(stemmed_words)
+                self.data.append(stemmed_words)
+                self.labels.append(intent['context'])
 
-        for w in words:
-            if w in wrds:
-                bag.append(1)
+    # ------------------------------------------------------------------------------
+
+    def train(self):
+
+        # Create training data
+
+        x = []
+        y = []
+
+        y = self.label_encoder.fit_transform(self.labels)
+
+        for wrds in self.data:
+
+            container = []
+
+            for w in self.words:
+                if w in wrds:
+                    container.append(1)
+                else:
+                    container.append(0)
+
+            x.append(container)
+
+        x = np.array(x)
+        y = np.array(y)
+
+        # Create model
+
+        self.model = tf.keras.Sequential([
+            tf.keras.Input(shape=(len(x[0]))),
+            tf.keras.layers.Dense(10),
+            tf.keras.layers.Dense(10),
+            tf.keras.layers.Dense(len(set(y)), activation='softmax')
+        ])
+
+        self.model.compile(
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            optimizer=tf.keras.optimizers.Adam(),
+            metrics=['accuracy'])
+
+        self.model.fit(x, y, epochs=500, batch_size=32, verbose=2)
+
+    # ------------------------------------------------------------------------------
+
+    def normalize_input(self, input):
+        """
+            Accept input as string to normalize. Return a container of normalized input.
+        """
+
+        tokenized_input = nltk.word_tokenize(input)
+        stemmed_input = [self.stemmer.stem(i) for i in tokenized_input]
+
+        container = []
+
+        for w in self.words:
+            if w in stemmed_input:
+                container.append(1)
             else:
-                bag.append(0)
+                container.append(0)
 
-        output_row = out_empty[:]
-        output_row[labels.index(docs_y[x])] = 1
+        # Change shape from (x, ) to (1, x)
+        return np.expand_dims(container, axis=0)
 
-        training.append(bag)
-        output.append(output_row)
+    def predict(self, query):
+        probabilities = self.model.predict(query)
 
-    training = numpy.array(training)
-    output = numpy.array(output)
+        result = np.argmax(probabilities)
 
-    with open("data.pickle", "wb") as f:
-        pickle.dump((words, labels, training, output), f)
+        context = self.label_encoder.inverse_transform([result])[0]
 
-tf.compat.v1.reset_default_graph()
+        return context
 
-net = tflearn.input_data(shape=[None, len(training[0])])
-net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, 8)
-net = tflearn.fully_connected(net, len(output[0]), activation="softmax")
-net = tflearn.regression(net)
+    def chat(self):
+        if self.model is None:
+            return print('I have not trained...cannot start a conversation...')
 
-model = tflearn.DNN(net)
+        print("I'm ready to chat!")
 
-if os.path.exists("model.tflearn" + ".meta"):
-    model.load("model.tflearn")
-else:
-    model.fit(training, output, n_epoch=1000, batch_size=8, show_metric=True)
-    model.save("model.tflearn")
+        while True:
+            inp = input("You: ")
+            if inp.lower() == "quit":
+                break
 
-def bag_of_words(s, words):
-    bag = [0 for _ in range(len(words))]
-    
-    s_words = nltk.word_tokenize(s)
-    s_words = [stemmer.stem(word.lower()) for word in s_words]
+            query = self.normalize_input(inp)
 
-    for se in s_words:
-        for i, w in enumerate(words):
-            if w == se:
-                bag[i] = 1
-    
-    return numpy.array(bag)
+            context = self.predict(query)
 
-def chat():
-    print("J.A.D.A.I is at your service!")
-    while True:
-        inp = input("You: ")
-        if inp.lower() == "quit":
-            break
-        
-        results = model.predict([bag_of_words(inp, words)])[0]
-        results_index = numpy.argmax(results)
-        tag = labels[results_index]
-        
-        if results[results_index] > 0.8:
-            for tg in data["intents"]:
-                if tg["tag"] == tag:
-                    responses = tg["responses"]
+            responses = next(intent['responses'] for intent in self.intents if intent['context'] == context)
+
             print(random.choice(responses))
-        else:
-            print("Sorry sir, I didn't get that. Please try again.")
 
-chat()
+
+if __name__ == '__main__':
+    ai = AI()
+
+    ai.train()
+
+    ai.chat()
