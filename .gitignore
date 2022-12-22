@@ -2,3 +2,6 @@
 temp
 model.png
 training_result.png
+
+# Ignore Jupyter Notebooks
+notebooks/** linguist-vendored
